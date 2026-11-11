@@ -1,0 +1,7 @@
+# Finais de linha LF em todos os arquivos de texto: scripts e configurações
+# são usados dentro de containers Linux (CRLF quebra sh, php.ini, nginx etc.).
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary

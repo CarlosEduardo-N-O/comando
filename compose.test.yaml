@@ -1,0 +1,43 @@
+# Testes isolados: projeto, rede e banco próprios (dados em tmpfs, descartados
+# ao final). Não usa o .env nem os volumes da instalação.
+#
+#   docker compose -f compose.test.yaml run --rm --build test
+#   docker compose -f compose.test.yaml run --rm --build frontend-build
+#   docker compose -f compose.test.yaml down -v
+
+name: comando-test
+
+services:
+  postgres-test:
+    image: postgres:17.9-alpine3.22
+    environment:
+      POSTGRES_DB: comando_test
+      POSTGRES_USER: comando_test
+      POSTGRES_PASSWORD: somente-testes
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U comando_test -d comando_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  test:
+    image: comando-backend:test
+    build:
+      context: ./backend
+      target: development
+    environment:
+      APP_ENV: testing
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    command: ["php", "vendor/bin/phpunit", "--testdox", "--colors=always"]
+
+  frontend-build:
+    image: comando-frontend:test
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      target: development
+    command: ["npm", "run", "build"]

@@ -1,0 +1,10 @@
+.git
+**/node_modules
+**/vendor
+**/.env
+.env
+backups
+docker/certs
+**/dist
+**/*.log
+backend

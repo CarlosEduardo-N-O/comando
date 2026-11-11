@@ -1,0 +1,45 @@
+# Complemento: PostgreSQL local, acessível apenas pela rede interna dos containers.
+# Use junto com compose.yaml:
+#   docker compose -f compose.yaml -f compose.local-db.yaml up -d --build
+# Para banco externo (RDS), NÃO inclua este arquivo e ajuste DB_HOST no .env.
+
+services:
+  postgres:
+    image: postgres:17.9-alpine3.22
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:?Defina DB_DATABASE no .env}
+      POSTGRES_USER: ${DB_USERNAME:?Defina DB_USERNAME no .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env}
+      TZ: UTC
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    networks: [internal]
+    restart: unless-stopped
+    shm_size: 128mb
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  backend:
+    depends_on:
+      postgres:
+        condition: service_healthy
+  worker:
+    depends_on:
+      postgres:
+        condition: service_healthy
+  scheduler:
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres:

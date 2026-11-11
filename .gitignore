@@ -1,0 +1,14 @@
+.env
+backend/.env
+backend/vendor/
+backend/storage/**/*.log
+backend/storage/framework/testing/
+backend/.phpunit.result.cache
+frontend/node_modules/
+frontend/dist/
+backups/
+docker/certs/*
+!docker/certs/.gitkeep
+*.pem
+*.log
+.phpunit.cache/

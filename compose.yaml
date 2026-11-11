@@ -1,0 +1,104 @@
+# Instalação do Comando (produção).
+#
+#   Banco local:   docker compose -f compose.yaml -f compose.local-db.yaml up -d --build
+#   Banco externo: docker compose -f compose.yaml up -d --build      (ex.: Amazon RDS)
+#
+# Nenhum código-fonte é montado: os serviços executam a partir das imagens.
+# Backend, worker e scheduler usam a MESMA imagem e a MESMA configuração (.env).
+
+name: ${COMPOSE_PROJECT_NAME:-comando}
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+x-backend: &backend
+  image: comando-backend:${COMANDO_TAG:-local}
+  build:
+    context: ./backend
+    target: production
+  env_file:
+    - path: .env
+      required: true
+  environment:
+    LOG_CHANNEL: stderr
+    QUEUE_CONNECTION: database
+  volumes:
+    - storage:/var/www/html/storage
+    - anexos:/var/www/html/storage/app/private/anexos
+    # Certificados de autoridade (ex.: bundle do RDS), somente leitura.
+    - ./docker/certs:/etc/comando/certs:ro
+  networks: [internal, egress]
+  restart: unless-stopped
+  logging: *logging
+  stop_grace_period: 30s
+
+services:
+  backend:
+    <<: *backend
+    # PHP-FPM: a verificação usa o ping do FPM, sem depender do banco.
+    healthcheck:
+      test: ["CMD-SHELL", "SCRIPT_NAME=/ping SCRIPT_FILENAME=/ping REQUEST_METHOD=GET cgi-fcgi -bind -connect 127.0.0.1:9000 | grep -q pong"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  worker:
+    <<: *backend
+    # Aguarda o banco (indisponibilidade temporária) e processa a fila "database".
+    command: ["sh", "-c", "php artisan comando:health --aguardar=120 && exec php artisan queue:work database --sleep=3 --tries=3 --timeout=90 --max-time=3600"]
+    healthcheck:
+      test: ["CMD", "php", "artisan", "comando:health"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+
+  scheduler:
+    <<: *backend
+    command: ["sh", "-c", "php artisan comando:health --aguardar=120 && exec php artisan schedule:work"]
+    healthcheck:
+      test: ["CMD", "php", "artisan", "comando:health"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+
+  web:
+    image: comando-web:${COMANDO_TAG:-local}
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      target: production
+    ports:
+      - "${WEB_BIND:-0.0.0.0}:${WEB_PORT:-8080}:8080"
+    networks: [internal, edge]
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    logging: *logging
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/nginx-health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  # Rede interna: backend, banco local e Nginx. Sem acesso externo.
+  internal:
+    internal: true
+  # Saída do backend para serviços externos (ex.: Amazon RDS).
+  egress:
+  # Rede do Nginx para publicar a porta da aplicação.
+  edge:
+
+volumes:
+  # Arquivos do Laravel (cache, sessões em arquivo, logs eventuais).
+  storage:
+  # Anexos privados das demandas.
+  anexos:

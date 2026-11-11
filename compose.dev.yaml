@@ -1,0 +1,61 @@
+# Complemento de DESENVOLVIMENTO (não usar na instalação).
+#   docker compose -f compose.yaml -f compose.local-db.yaml -f compose.dev.yaml up -d --build
+#
+# - Monta o código do backend e do frontend (recarregamento sem rebuild).
+# - Usa a etapa "development" da imagem do backend (inclui PHPUnit).
+# - Sobe o Vite em http://localhost:5173 (proxy de /api e /sanctum para o Nginx).
+# - Expõe o PostgreSQL apenas em 127.0.0.1:${DB_DEV_PORT:-5433}.
+
+x-backend-dev: &backend-dev
+  image: comando-backend:dev
+  build:
+    context: ./backend
+    target: development
+  environment:
+    APP_ENV: local
+    APP_DEBUG: "true"
+    LOG_LEVEL: debug
+    CORS_ALLOWED_ORIGINS: http://localhost:5173
+    SANCTUM_STATEFUL_DOMAINS: localhost:8080,127.0.0.1:8080,localhost:5173,127.0.0.1:5173
+  volumes:
+    - ./backend:/var/www/html
+    - backend_vendor:/var/www/html/vendor
+    # Diretórios graváveis pelo usuário www-data (montagens do Windows não permitem).
+    - backend_bootstrap_cache:/var/www/html/bootstrap/cache
+    - storage:/var/www/html/storage
+    - anexos:/var/www/html/storage/app/private/anexos
+    - ./docker/certs:/etc/comando/certs:ro
+
+services:
+  backend:
+    <<: *backend-dev
+  worker:
+    <<: *backend-dev
+  scheduler:
+    <<: *backend-dev
+
+  frontend-dev:
+    image: comando-frontend:dev
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      target: development
+    environment:
+      VITE_PROXY_TARGET: http://web:8080
+    ports:
+      - "127.0.0.1:5173:5173"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    networks: [internal, edge]
+    depends_on: [web]
+
+  postgres:
+    ports:
+      - "127.0.0.1:${DB_DEV_PORT:-5433}:5432"
+    networks: [internal, edge]
+
+volumes:
+  backend_vendor:
+  backend_bootstrap_cache:
+  frontend_node_modules:
