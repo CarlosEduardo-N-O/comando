@@ -394,3 +394,13 @@ a porta 8080 só aceite conexões do proxy.
 - **Interface:** login, painel, listas, detalhes, rejeição de solução, atribuição, perfil, Swagger e layout de celular foram verificados no navegador; o envio de anexos foi validado pela API (sessão + CSRF reais), não pelo seletor de arquivos do navegador.
 - Não há testes automatizados de interface (o frontend é validado pelo build de produção).
 - Fora do escopo desta versão: múltiplas empresas, e-mails, WhatsApp, chat em tempo real/WebSocket, reabertura de demandas encerradas, edição de título/descrição/categoria, edição/exclusão de comentários, comentários privados e integração com S3 (a abstração de armazenamento está pronta via `ANEXOS_DISK`).
+
+---
+
+## Teste de implantação automática (AWS Academy)
+
+Esta atualização documental foi criada para validar o fluxo de CI/CD automático.
+
+Após um commit na branch `main`, o GitHub Actions executa os testes e a análise de segurança. Quando o commit é aprovado, o controlador `comando-auto-pull`, executado periodicamente na EC2, identifica o novo SHA e realiza a implantação automaticamente.
+
+A validação do deploy será feita por meio dos logs do serviço e do endpoint `/health`.
