@@ -13,3 +13,22 @@ Fluxo:
 
 Teste realizado em: 22/11/2026.
 Status: aguardando execucao.
+
+---
+
+## Segundo teste de CI/CD - AWS Academy
+
+Data: 22/11/2026
+
+Objetivo: validar uma segunda execucao do pipeline
+CI/CD com novo commit na branch main.
+
+Verificacoes:
+- Testes automatizados Laravel.
+- Build do React.
+- Analise SAST pelo SonarCloud.
+- Execucao do workflow CD.
+- Identificacao do novo SHA pelo deploy automatico.
+- Verificacao da aplicacao na EC2.
+
+Status: aguardando validacao.
