@@ -336,19 +336,3 @@ input[type="checkbox"] { width: 18px; height: 18px; min-height: auto; accent-col
   .tabela-responsiva td.celula-acoes { display: block; text-align: left; }
   .tabela-responsiva td.celula-acoes::before { content: none; }
 }
-
-/* TESTE TEMPORARIO CI/CD AWS - REMOVER APOS VALIDACAO */
-.aviso-deploy-aws {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 99999;
-  padding: 12px;
-  background: #facc15;
-  color: #171717;
-  text-align: center;
-  font-size: 14px;
-  font-weight: 800;
-  border-bottom: 2px solid #ca8a04;
-}

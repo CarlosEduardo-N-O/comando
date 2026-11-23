@@ -26,11 +26,7 @@ function Protegida({ children, perfis }) {
 
 export default function App() {
   return (
-    <>
-      <div className="aviso-deploy-aws">
-        TESTE DEPLOY AUTOMATICO AWS - 03
-      </div>
-      <Routes>
+    <Routes>
       <Route path="/login" element={<Login />} />
       <Route element={<Protegida><Layout /></Protegida>}>
         <Route index element={<Inicio />} />
@@ -53,7 +49,6 @@ export default function App() {
         />
         <Route path="*" element={<Vazio titulo="Página não encontrada" texto="Verifique o endereço ou use o menu." />} />
       </Route>
-      </Routes>
-    </>
+    </Routes>
   );
 }
