@@ -25,5 +25,6 @@ COPY docs/openapi.json /app/dist/docs/openapi.json
 # Nginx sem privilégios (porta 8080, usuário nginx) servindo o build.
 FROM ${NGINX_IMAGE} AS production
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY docker/nginx/readiness-local.conf /etc/nginx/comando-readiness/placeholder.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 8080
